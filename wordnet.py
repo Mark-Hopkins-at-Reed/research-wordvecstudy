@@ -1,5 +1,6 @@
 from nltk.corpus import wordnet as wn
 import random
+import pandas as pd
 
 """
 If running for the first time, do the following in your Python console:
@@ -99,7 +100,7 @@ def get_all_hyponyms(synset_name):
                 closed.add(synset)
                 for y in synset.hyponyms():
                     open_list.append(y)                
-        closed.remove(sense)
+        #closed.remove(sense)
         return closed
     result = set()
     hyponyms = get_all_hyponym_senses_from_sense(wn.synset(synset_name))
@@ -206,6 +207,69 @@ def find_lowest_common_ancestor(words):
 
 
 
+class WordnetDataSource:
+    
+    def __init__(self):
+        self.unknown = None
+        self.min_length = None
+        self.total = None
 
+    def read(self, tags, phrase_recognizer):        
+        recognized_tag_map = dict()
+        unknown = 0
+        total = 0
+        min_length = float('inf')
+        for tag in tags:
+            recognized = []
+            for phrase in get_all_hyponyms(tag):
+                total += 1
+                if phrase_recognizer(phrase):
+                    recognized.append(phrase)
+                else:
+                    unknown += 1           
+            random.shuffle(recognized)
+            recognized_tag_map[tag] = recognized
+            min_length = min(min_length, len(recognized))            
+        result = []
+        for tag in tags:
+            for phrase in recognized_tag_map[tag]:
+                result.append({'phrase': phrase, 'category': tag})
+        random.shuffle(result)
+        self.unknown = unknown
+        self.min_length = min_length
+        self.total = total
+        return pd.DataFrame(result)
 
                 
+def remove_duplicates(frame):
+    rows_by_tag = {k: v for k, v in frame.groupby('category')}
+    phrase_sets = [set(rows_by_tag[tag]['phrase']) for tag in rows_by_tag]
+    seen_before = set()
+    duplicates = set()
+    for s in phrase_sets:
+        duplicates |= (s & seen_before)
+        seen_before |= s
+    result = []
+    for tag in rows_by_tag:
+        for phrase in rows_by_tag[tag]['phrase']:
+            if phrase not in duplicates:
+                result.append({'phrase': phrase, 'category': tag})
+    return pd.DataFrame(result)
+    
+        
+def make_even(frame):
+    rows_by_tag = {k: v for k, v in frame.groupby('category')}
+    min_phrases = min([len(rows_by_tag[tag]['phrase']) for 
+                       tag in rows_by_tag])
+    result = []
+    for tag in rows_by_tag:
+        rows = rows_by_tag[tag]
+        df = rows.sample(frac=min_phrases/len(rows))
+        result.append(df)
+    return pd.concat(result)
+    
+    
+    
+    
+    
+    
