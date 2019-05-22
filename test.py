@@ -3,6 +3,8 @@ import unittest
 from wordnet import hypernym_chain, get_all_hypernym_synsets
 from wordnet import get_all_hyponyms, Specificity, get_specific_synsets
 from wordnet import find_lowest_common_ancestor, word_based
+from wordnet import WordnetDataSource
+from data import DataManager
 
 specificity = Specificity()
 
@@ -46,6 +48,7 @@ class WordnetTests(unittest.TestCase):
         assert actual == expected
         
     def test_get_all_hyponyms(self):
+        
         actual = get_all_hyponyms('noble_metal.n.01')
         expected = { '24-karat_gold',
                      'Ag',
@@ -59,29 +62,30 @@ class WordnetTests(unittest.TestCase):
                      'gold_dust',
                      'green_gold',
                      'guinea_gold',
+                     'noble_metal',
                      'platinum',
                      'pure_gold',
                      'silver'}
         assert actual == expected
 
     def test_specificity(self):
-        assert specificity('noble_metal.n.01') == 15
+        assert specificity('noble_metal.n.01') == 16
         
     def test_get_specific_synsets(self):
         actual = get_specific_synsets(202, 203)
-        expected = {'climber.n.01', 'fastener.n.02', 'solid.n.03'}
+        expected = {'convey.v.03', 'climber.n.01', 'propulsion.n.02'}
         assert actual == expected
         
     def test_find_lowest_common_ancestor(self):
         actual = find_lowest_common_ancestor(['communist', 
                                               'democrat', 
                                               'republican'])
-        assert actual == (60, 'politician.n.02')
+        assert actual == (64, 'politician.n.02')
         actual = find_lowest_common_ancestor(['apple', 
                                               'banana', 
                                               'orange', 
-                                              'grape'])        
-        assert actual == (297, 'edible_fruit.n.01')
+                                              'grape'])  
+        assert actual == (298, 'edible_fruit.n.01')
         
     def test_word_based(self):
         get_hypernyms = word_based(get_all_hypernym_synsets)
@@ -103,5 +107,24 @@ class WordnetTests(unittest.TestCase):
                      'whole.n.02'}
         assert actual == expected
 
+
+class DataTests(unittest.TestCase):
+
+    def setUp(self):
+        """Call before every test case."""
+        pass
+        
+    def tearDown(self):
+        """Call after every test case."""
+        pass
+    
+    def test_tags(self):
+        manager = DataManager(WordnetDataSource(), 
+                              ['edible_fruit.n.01', 'wheeled_vehicle.n.01'])
+        assert manager.tag_index('edible_fruit.n.01') == 0
+        assert manager.tag_index('wheeled_vehicle.n.01') == 1
+        assert manager.tag(0) == 'edible_fruit.n.01'
+        assert manager.tag(1) == 'wheeled_vehicle.n.01'
+  
 if __name__ == "__main__":
     unittest.main() # run all tests
