@@ -1,6 +1,7 @@
 from nltk.corpus import wordnet as wn
 import random
 import pandas as pd
+from data import TaggedPhraseDataset, TaggedPhraseSource
 
 """
 If running for the first time, do the following in your Python console:
@@ -207,7 +208,7 @@ def find_lowest_common_ancestor(words):
 
 
 
-class WordnetDataSource:
+class WordnetDataSource(TaggedPhraseSource):
     
     def __init__(self):
         self.unknown = None
@@ -238,7 +239,8 @@ class WordnetDataSource:
         self.unknown = unknown
         self.min_length = min_length
         self.total = total
-        return pd.DataFrame(result)
+        #return pd.DataFrame(result)
+        return TaggedPhraseDataset(make_even(remove_duplicates(pd.DataFrame(result))))
 
                 
 def remove_duplicates(frame):
@@ -254,7 +256,9 @@ def remove_duplicates(frame):
         for phrase in rows_by_tag[tag]['phrase']:
             if phrase not in duplicates:
                 result.append({'phrase': phrase, 'category': tag})
-    return pd.DataFrame(result)
+    df = pd.DataFrame(result)
+    df = df.reset_index(drop=True)
+    return df
     
         
 def make_even(frame):
@@ -266,7 +270,9 @@ def make_even(frame):
         rows = rows_by_tag[tag]
         df = rows.sample(frac=min_phrases/len(rows))
         result.append(df)
-    return pd.concat(result)
+    df = pd.concat(result)
+    df = df.reset_index(drop=True)
+    return df
     
     
     
