@@ -26,6 +26,10 @@ class TaggedPhraseDataset(Dataset):
         phrase = self.data_frame['phrase'][idx]
         sample = {'phrase': phrase, 'tag': tag}
         return sample
+    
+    def restrict_to_tag(self, tag):
+        df = self.data_frame
+        return df.loc[df['tag'] == tag]
 
 
 class TaggedPhraseSource:
@@ -89,13 +93,31 @@ class DataManager:
     Wrapper for a TaggedPhraseSource that indexes the tags, and splits
     the data into train, dev, and test partitions.
     
+    The DataManager also provides a mechanism for converting the phrases
+    into vector embeddings.
+    
     """    
-    def __init__(self, data_source, tags, phrase_recognizer=lambda p: True):
+    def __init__(self, 
+                 data_source, 
+                 tags, 
+                 vectorizer, 
+                 phrase_recognizer=lambda p: True):
+        
         self.dataset = data_source.read(tags, phrase_recognizer)           
+        self.num_phrases = {tag: len(self.dataset.restrict_to_tag(tag)) for 
+                            tag in tags}
         self.tags = tags
+        self.vectorizer = vectorizer
         self.train, self.dev, self.test = DataManager.get_samplers(self.dataset, 0.3, 0.3)
         self._tag_indices = {tags[i]: i for i in range(len(tags))}
-     
+    
+    def vectorize(self, phrase):
+        """
+        Converts a phrase into a vector representation.
+        
+        """
+        return self.vectorizer(phrase)
+    
     def tag(self, tag_index):
         """
         Returns the tag associated with the given index.

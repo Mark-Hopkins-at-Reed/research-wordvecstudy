@@ -234,7 +234,7 @@ class WordnetDataSource(TaggedPhraseSource):
         result = []
         for tag in tags:
             for phrase in recognized_tag_map[tag]:
-                result.append({'phrase': phrase, 'category': tag})
+                result.append({'phrase': phrase, 'tag': tag})
         random.shuffle(result)
         self.unknown = unknown
         self.min_length = min_length
@@ -244,7 +244,7 @@ class WordnetDataSource(TaggedPhraseSource):
 
                 
 def remove_duplicates(frame):
-    rows_by_tag = {k: v for k, v in frame.groupby('category')}
+    rows_by_tag = {k: v for k, v in frame.groupby('tag')}
     phrase_sets = [set(rows_by_tag[tag]['phrase']) for tag in rows_by_tag]
     seen_before = set()
     duplicates = set()
@@ -255,14 +255,14 @@ def remove_duplicates(frame):
     for tag in rows_by_tag:
         for phrase in rows_by_tag[tag]['phrase']:
             if phrase not in duplicates:
-                result.append({'phrase': phrase, 'category': tag})
+                result.append({'phrase': phrase, 'tag': tag})
     df = pd.DataFrame(result)
     df = df.reset_index(drop=True)
     return df
     
         
 def make_even(frame):
-    rows_by_tag = {k: v for k, v in frame.groupby('category')}
+    rows_by_tag = {k: v for k, v in frame.groupby('tag')}
     min_phrases = min([len(rows_by_tag[tag]['phrase']) for 
                        tag in rows_by_tag])
     result = []
